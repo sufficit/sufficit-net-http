@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	
+	<PropertyGroup Label="Sufficit Targeting">
+		<TargetFrameworks>netstandard2.0;net7.0;net8.0;net9.0</TargetFrameworks>
+		<RootNamespace>Sufficit.Net.Http</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+		<RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Sufficit Versioning">
+		<VersionSuffix>1.$([System.DateTime]::UtcNow.ToString(yy)).$([System.DateTime]::UtcNow.ToString(MMdd)).$([System.DateTime]::UtcNow.ToString(HHmm))</VersionSuffix>
+		<AssemblyVersion Condition=" '$(VersionSuffix)' == '' ">1.0.0.0</AssemblyVersion>
+		<AssemblyVersion Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</AssemblyVersion>
+		<Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
+		<Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Sufficit Pacote NUGET">
+		<Name>Sufficit.Net.Http</Name>
+		<PackageId>Sufficit.Net.Http</PackageId>
+		<PackageDescription></PackageDescription>
+		<RepositoryUrl>https://github.com/sufficit/sufficit-net-http</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/sufficit/sufficit-net-http</PackageProjectUrl>
+		<PackageIconUrl>https://raw.githubusercontent.com/sufficit/sufficit-net-http/main/icon.ico</PackageIconUrl>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="../icon.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+		<None Include="../LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+		<None Include="../readme.md">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<NoWarn>$(NoWarn);nullable</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
+		<PackageReference Include="System.Net.Http.Json" Version="[*,9.0.0)" />
+	</ItemGroup>
+
+	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0' ">
+		<PackageReference Include="System.Net.Http.Json" Version="[*,10.0.0)" />
+	</ItemGroup>
+
+	<ItemGroup Label="Sufficit Dependencies on Packing" Condition=" '$(Configuration)' == 'Packing' ">
+		<PackageReference Include="Sufficit.Base" Version="1.*" />
+		<PackageReference Include="Sufficit.Identity.Core" Version="1.*" />
+	</ItemGroup>
+
+	<ItemGroup Label="Sufficit Local Dependencies" Condition=" '$(Configuration)' != 'Packing' ">
+		<ProjectReference Include="..\..\sufficit-base\src\Sufficit.Base.csproj" />
+		<ProjectReference Include="..\..\sufficit-identity-core\src\Sufficit.Identity.Core.csproj" />
+	</ItemGroup>
+	
+</Project>
