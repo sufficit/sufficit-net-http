@@ -39,7 +39,7 @@ namespace Sufficit.Net.Http
                     var accessToken = await _tokens.GetTokenAsync();
 
                     if (string.IsNullOrWhiteSpace(accessToken))
-                        throw new UnauthorizedAccessException("access token not available at this time");
+                        throw new UnauthenticatedExpection("access token not available at this time");
 
                     // set the bearer token to the outgoing request
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
