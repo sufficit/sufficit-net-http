@@ -6,6 +6,7 @@
 		<LangVersion>8.0</LangVersion>
 		<RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
 		<Nullable>enable</Nullable>
+		<Configurations>Debug;Release;Packing</Configurations>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Sufficit Versioning">
