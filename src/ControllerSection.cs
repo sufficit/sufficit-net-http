@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -35,6 +36,9 @@ namespace Sufficit.Net.Http
         protected Task<IEnumerable<T>> RequestMany<T>(HttpRequestMessage message, CancellationToken cancellationToken) where T : class, new()
             => RequestManyInternal<T>(message, cancellationToken);
 
+        protected IAsyncEnumerable<T> RequestManyAsAsyncEnumerable<T>(HttpRequestMessage message, CancellationToken cancellationToken) where T : class, new()
+            => RequestManyInternalAsAsyncEnumerable<T>(message, cancellationToken);
+
         private async Task<IEnumerable<T>> RequestManyInternal<T>(HttpRequestMessage message, CancellationToken cancellationToken)
         {
             using var response = await SendAsync(message, cancellationToken);
@@ -47,6 +51,21 @@ namespace Sufficit.Net.Http
                 return Enumerable.Empty<T>();
 
             return await response.Content.ReadFromJsonAsync<IEnumerable<T>>(_json, cancellationToken) ?? Enumerable.Empty<T>();
+        }
+
+        private async IAsyncEnumerable<T> RequestManyInternalAsAsyncEnumerable<T>(HttpRequestMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            using var response = await SendAsync(message, cancellationToken);
+            await response.EnsureSuccess(cancellationToken);
+
+            // updating healthy for this controller
+            _healthy?.Invoke(true);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                yield break;
+
+            await foreach (var item in response.Content.ReadFromJsonAsAsyncEnumerable<T>(_json, cancellationToken))
+                if (item != null) yield return item;
         }
 
         protected async Task<T?> RequestStruct<T>(HttpRequestMessage message, CancellationToken cancellationToken) where T : struct
