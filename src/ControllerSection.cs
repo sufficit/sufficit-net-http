@@ -1,12 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,6 +63,24 @@ namespace Sufficit.Net.Http
 
             await foreach (var item in response.Content.ReadFromJsonAsAsyncEnumerable<T>(_json, cancellationToken))
                 if (item != null) yield return item;
+        }
+
+        protected async Task<string?> RequestString(HttpRequestMessage message, CancellationToken cancellationToken)
+        {
+            using var response = await SendAsync(message, cancellationToken);
+            await response.EnsureSuccess(cancellationToken);
+
+            // updating healthy for this controller
+            _healthy?.Invoke(true);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+
+#if NETSTANDARD
+            return await response.Content.ReadAsStringAsync();
+#else
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+#endif
         }
 
         protected async Task<T?> RequestStruct<T>(HttpRequestMessage message, CancellationToken cancellationToken) where T : struct
