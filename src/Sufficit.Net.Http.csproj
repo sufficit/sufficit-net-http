@@ -31,17 +31,24 @@
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Label="Sufficit Pack Items">
 		<None Include="../icon.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-		<None Include="../LICENSE">
+		<None Include="../license">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
 		<None Include="../readme.md">
 			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup Label="Sufficit IA Configurations">
+		<None Include="../.github/copilot-instructions.md">
+			<Pack>False</Pack>
 			<PackagePath></PackagePath>
 		</None>
 	</ItemGroup>
