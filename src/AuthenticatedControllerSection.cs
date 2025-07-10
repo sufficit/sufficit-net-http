@@ -75,6 +75,13 @@ namespace Sufficit.Net.Http
             return false;
         }
 
+        /// <summary>
+        /// Paths that are considered anonymous, and do not require authentication.
+        /// </summary>
+        /// <remarks>
+        /// Only use that if you are sure that the path is anonymous and does not require authentication, for all requests methods (GET, POST, PUT, DELETE, etc.).
+        /// Otherwise, you will miss the authentication for those requests.
+        /// </remarks>
         protected virtual string[]? AnonymousPaths { get; }
     }
 }
