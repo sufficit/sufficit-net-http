@@ -26,7 +26,7 @@
 		<PackageIconUrl>https://raw.githubusercontent.com/sufficit/sufficit-net-http/main/icon.ico</PackageIconUrl>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageLicenseFile>license</PackageLicenseFile>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
