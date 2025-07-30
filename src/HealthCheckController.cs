@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -13,6 +13,9 @@ namespace Sufficit.Net.Http
         readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
         private readonly HttpClient _client;
 
+        /// <summary>
+        ///     Healthy or UnHealthy status
+        /// </summary>
         public bool Available { get; private set; }
 
         /// <summary>
