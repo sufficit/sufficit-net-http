@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -61,7 +61,12 @@ namespace Sufficit.Net.Http
             if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
                 yield break;
 
-            await foreach (var item in response.Content.ReadFromJsonAsAsyncEnumerable<T>(_json, cancellationToken))
+#if NETSTANDARD2_0
+            using var stream = await response.Content.ReadAsStreamAsync();
+#else
+            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+#endif
+            await foreach (var item in JsonSerializer.DeserializeAsyncEnumerable<T>(stream, _json, cancellationToken))
                 if (item != null) yield return item;
         }
 
