@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	
 	<PropertyGroup Label="Sufficit Targeting">
-		<TargetFrameworks>netstandard2.0;net7.0;net8.0;net9.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net7.0;net9.0</TargetFrameworks>
 		<RootNamespace>Sufficit.Net.Http</RootNamespace>
 		<RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
 		<Configurations>Debug;Release;Packing</Configurations>
@@ -51,7 +51,7 @@
 		</None>
 	</ItemGroup>
 
-	<!-- #region Sufficit Versioning Options V:202508251150 -->
+	<!-- #region Sufficit Versioning Options V:202601071947 -->
 
 	<PropertyGroup Label="Sufficit Versioning Options" Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PkgVersion>[9.*,10.0.0)</PkgVersion>
@@ -76,13 +76,6 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
-	<PropertyGroup Label="Sufficit Versioning Options" Condition=" '$(TargetFramework)' == 'net8.0' ">
-		<PkgVersion>[8.*,10.0.0)</PkgVersion>
-		<PkgVersionUntil8>[*,10.0.0)</PkgVersionUntil8>
-		<LangVersion>10.0</LangVersion>
-		<Nullable>enable</Nullable>
-	</PropertyGroup>
-
 	<PropertyGroup Label="Sufficit Versioning Options" Condition=" '$(TargetFramework)' == 'net9.0' ">
 		<PkgVersion>[9.*,10.0.0)</PkgVersion>
 		<PkgVersionUntil8>[*,10.0.0)</PkgVersionUntil8>
@@ -102,6 +95,9 @@
 
 		<ProjectReference Include="..\..\sufficit-identity-core\src\Sufficit.Identity.Core.csproj" Condition="Exists('..\\..\\sufficit-identity-core\\src\\Sufficit.Identity.Core.csproj')" />
 		<PackageReference Include="Sufficit.Identity.Core" Version="1.*" Condition="!Exists('..\\..\\sufficit-identity-core\\src\\Sufficit.Identity.Core.csproj') " />
+		
+		<ProjectReference Include="..\..\sufficit-json\src\Sufficit.Json.csproj" Condition="Exists('..\\..\\sufficit-json\\src\\Sufficit.Json.csproj')" />
+		<PackageReference Include="Sufficit.Json" Version="1.*" Condition="!Exists('..\\..\\sufficit-json\\src\\Sufficit.Json.csproj') " />
 	</ItemGroup>
 	
 </Project>
