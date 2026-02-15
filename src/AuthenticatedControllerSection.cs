@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
+using System.Collections.Generic;
 using Sufficit.Identity;
 
 namespace Sufficit.Net.Http
@@ -61,19 +62,75 @@ namespace Sufficit.Net.Http
             else
                 path = request.RequestUri.ToString().Split('?').First();
 
-            if (IsAnonymous(path))
+            if (IsAnonymous(request.Method, path))
                 return false;
 
             return true;           
         }
 
+        protected virtual bool IsAnonymous(HttpMethod method, string path)
+        {
+            var normalizedPath = NormalizePath(path);
+
+            if (normalizedPath == "/health")
+                return true;
+
+            var methodRules = AnonymousPathsByMethod;
+            if (methodRules != null)
+            {
+                foreach (var rule in methodRules)
+                {
+                    if (!PathEquals(rule.Key, normalizedPath))
+                        continue;
+
+                    var methods = rule.Value;
+                    if (methods == null || methods.Length == 0)
+                        return false;
+
+                    var requestMethod = method.Method;
+                    if (methods.Any(allowed => string.Equals(allowed, "*", StringComparison.OrdinalIgnoreCase) || string.Equals(allowed, requestMethod, StringComparison.OrdinalIgnoreCase)))
+                        return true;
+
+                    return false;
+                }
+            }
+
+            return IsAnonymous(normalizedPath);
+        }
+
         protected virtual bool IsAnonymous(string path)
         {
-            if (path == "/health") return true;
-            if (AnonymousPaths != null && AnonymousPaths.Contains(path)) return true;
+            var normalizedPath = NormalizePath(path);
+
+            if (normalizedPath == "/health") return true;
+            if (AnonymousPaths != null && AnonymousPaths.Any(candidate => PathEquals(candidate, normalizedPath))) return true;
 
             return false;
         }
+
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return "/";
+
+            var normalized = path.Trim();
+            if (!normalized.StartsWith("/"))
+                normalized = "/" + normalized;
+
+            return normalized;
+        }
+
+        private static bool PathEquals(string? left, string? right)
+            => string.Equals(NormalizePath(left ?? string.Empty), NormalizePath(right ?? string.Empty), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Paths considered anonymous for specific HTTP methods.
+        /// </summary>
+        /// <remarks>
+        /// These rules have precedence over <see cref="AnonymousPaths"/> for the same path.
+        /// Key = path, Value = allowed HTTP methods (e.g. GET, POST). Use "*" to allow all methods for that path.
+        /// </remarks>
+        protected virtual IReadOnlyDictionary<string, string[]>? AnonymousPathsByMethod { get; }
 
         /// <summary>
         /// Paths that are considered anonymous, and do not require authentication.
