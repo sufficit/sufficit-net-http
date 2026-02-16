@@ -9,6 +9,16 @@ using Sufficit.Identity;
 
 namespace Sufficit.Net.Http
 {
+    /// <summary>
+    /// Base controller section that can attach an access token (Bearer) to outgoing HTTP requests.
+    /// </summary>
+    /// <remarks>
+    /// Default behavior:
+    /// - If an access token is available, it will be attached to the request.
+    /// - If no token is available, the request is only allowed to proceed when it targets an anonymous path.
+    /// - <see cref="HttpMethod.Head"/> is never authenticated (token is not attached).
+    /// - <see cref="HttpRequestMessage.RequestUri"/> is required to evaluate anonymous paths.
+    /// </remarks>
     public abstract class AuthenticatedControllerSection : ControllerSection
     {
         private readonly ITokenProvider _tokens;
@@ -30,44 +40,66 @@ namespace Sufficit.Net.Http
             return await base.SendAsync(request, cancellationToken);
         }
 
+        /// <summary>
+        /// Tries to attach an Authorization header (Bearer token) to the outgoing request.
+        /// </summary>
+        /// <remarks>
+        /// If token is unavailable and the request targets a non-anonymous path, this method throws <see cref="UnauthenticatedExpection"/>.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when <see cref="HttpRequestMessage.RequestUri"/> is null.</exception>
+        /// <exception cref="UnauthenticatedExpection">Thrown when no token is available and the path is not anonymous.</exception>
         protected virtual async ValueTask Authenticate(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            if (ShouldAuthenticate(request))
-            {
-                if (request.Headers.Authorization == null)
-                {
-                    // request the access token
-                    var accessToken = await _tokens.GetTokenAsync();
-
-                    if (string.IsNullOrWhiteSpace(accessToken))
-                        throw new UnauthenticatedExpection("access token not available at this time");
-
-                    // set the bearer token to the outgoing request
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-                }
-            }
-        }
-
-        protected virtual bool ShouldAuthenticate (HttpRequestMessage request)
-        {
+        {            
             if (request.Method == HttpMethod.Head)
-                return false;
+                return;
+
+            if (request.Headers.Authorization != null)
+                return;
 
             if (request.RequestUri == null)
-                return false;
+                throw new InvalidOperationException("RequestUri is required");
+           
+            // request the access token
+            var accessToken = await _tokens.GetTokenAsync();
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                // set the bearer token to the outgoing request
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+                return;
+            }
 
-            string path;
-            if (request.RequestUri.IsAbsoluteUri)
-                path = request.RequestUri.AbsolutePath;
-            else
-                path = request.RequestUri.ToString().Split('?').First();
-
+            var path = GetRequestPath(request);
             if (IsAnonymous(request.Method, path))
-                return false;
-
-            return true;           
+                return;
+        
+            throw new UnauthenticatedExpection("access token not available at this time");    
         }
 
+                /// <summary>
+                /// Extracts a normalized path from <see cref="HttpRequestMessage.RequestUri"/> to be used by anonymous-path rules.
+                /// </summary>
+                /// <remarks>
+                /// For absolute URIs, uses <see cref="Uri.AbsolutePath"/>.
+                /// For relative URIs, uses the string representation and strips the query string.
+                /// </remarks>
+                /// <exception cref="InvalidOperationException">Thrown when <see cref="HttpRequestMessage.RequestUri"/> is null.</exception>
+        protected virtual string GetRequestPath(HttpRequestMessage request)
+        {
+            if (request.RequestUri == null)
+                throw new InvalidOperationException("RequestUri is required");
+
+            if (request.RequestUri.IsAbsoluteUri)
+                return request.RequestUri.AbsolutePath;
+
+            return request.RequestUri.ToString().Split('?').First();
+        }
+
+        /// <summary>
+        /// Determines whether a given path is considered anonymous for a specific HTTP method.
+        /// </summary>
+        /// <remarks>
+        /// Method-specific rules (<see cref="AnonymousPathsByMethod"/>) have precedence over <see cref="AnonymousPaths"/>.
+        /// </remarks>
         protected virtual bool IsAnonymous(HttpMethod method, string path)
         {
             var normalizedPath = NormalizePath(path);
@@ -98,6 +130,9 @@ namespace Sufficit.Net.Http
             return IsAnonymous(normalizedPath);
         }
 
+        /// <summary>
+        /// Determines whether a given path is considered anonymous for all HTTP methods.
+        /// </summary>
         protected virtual bool IsAnonymous(string path)
         {
             var normalizedPath = NormalizePath(path);
@@ -108,6 +143,12 @@ namespace Sufficit.Net.Http
             return false;
         }
 
+        /// <summary>
+        /// Normalizes a path to a canonical representation used for matching.
+        /// </summary>
+        /// <remarks>
+        /// Ensures the path is non-empty and starts with '/'.
+        /// </remarks>
         private static string NormalizePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -120,6 +161,9 @@ namespace Sufficit.Net.Http
             return normalized;
         }
 
+        /// <summary>
+        /// Compares two paths after normalization.
+        /// </summary>
         private static bool PathEquals(string? left, string? right)
             => string.Equals(NormalizePath(left ?? string.Empty), NormalizePath(right ?? string.Empty), StringComparison.OrdinalIgnoreCase);
 
