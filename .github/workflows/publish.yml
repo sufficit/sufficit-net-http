@@ -20,7 +20,6 @@ jobs:
       with:
         dotnet-version: |
           7.0.x
-          8.0.x
           9.0.x
         
     - name: Install legacy .NET Core SDK 2.2.x
