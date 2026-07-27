@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,17 +23,45 @@ namespace Sufficit.Net.Http
 #if NET5_0_OR_GREATER
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 if (!string.IsNullOrWhiteSpace(content))
-                    throw new HttpRequestException(content, new Exception(response.ReasonPhrase), response.StatusCode);
+                    throw new HttpRequestException(
+                        ExtractErrorMessage(content),
+                        new Exception(response.ReasonPhrase),
+                        response.StatusCode);
                 else
                     response.EnsureSuccessStatusCode();
 #else
                 var content = await response.Content.ReadAsStringAsync();
                 if (!string.IsNullOrWhiteSpace(content))
-                    throw new HttpRequestException(content);
+                    throw new HttpRequestException(ExtractErrorMessage(content));
                 else
                     response.EnsureSuccessStatusCode();
 #endif
             }
+        }
+
+        /// <summary>
+        /// Returns the API message when the response follows the standard endpoint
+        /// envelope, preserving the original body for non-JSON responses.
+        /// </summary>
+        private static string ExtractErrorMessage(string content)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(content);
+                if (document.RootElement.ValueKind == JsonValueKind.Object
+                    && document.RootElement.TryGetProperty("message", out var messageElement)
+                    && messageElement.ValueKind == JsonValueKind.String)
+                {
+                    var message = messageElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(message))
+                        return message;
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+            }
+
+            return content;
         }
     }
 }
