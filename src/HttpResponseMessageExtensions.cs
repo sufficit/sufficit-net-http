@@ -41,20 +41,41 @@ namespace Sufficit.Net.Http
 
         /// <summary>
         /// Returns the API message when the response follows the standard endpoint
-        /// envelope, preserving the original body for non-JSON responses.
+        /// envelope ("message") or the RFC 7807 ProblemDetails shape ("detail",
+        /// then "title"), preserving the original body for non-JSON responses.
         /// </summary>
         private static string ExtractErrorMessage(string content)
         {
             try
             {
                 using var document = JsonDocument.Parse(content);
-                if (document.RootElement.ValueKind == JsonValueKind.Object
-                    && document.RootElement.TryGetProperty("message", out var messageElement)
-                    && messageElement.ValueKind == JsonValueKind.String)
+                if (document.RootElement.ValueKind == JsonValueKind.Object)
                 {
-                    var message = messageElement.GetString();
-                    if (!string.IsNullOrWhiteSpace(message))
-                        return message;
+                    // Canonical Sufficit envelope first.
+                    if (document.RootElement.TryGetProperty("message", out var messageElement)
+                        && messageElement.ValueKind == JsonValueKind.String)
+                    {
+                        var message = messageElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(message))
+                            return message;
+                    }
+
+                    // RFC 7807 ProblemDetails used by typed conflict responses.
+                    if (document.RootElement.TryGetProperty("detail", out var detailElement)
+                        && detailElement.ValueKind == JsonValueKind.String)
+                    {
+                        var detail = detailElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(detail))
+                            return detail;
+                    }
+
+                    if (document.RootElement.TryGetProperty("title", out var titleElement)
+                        && titleElement.ValueKind == JsonValueKind.String)
+                    {
+                        var title = titleElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(title))
+                            return title;
+                    }
                 }
             }
             catch (System.Text.Json.JsonException)
